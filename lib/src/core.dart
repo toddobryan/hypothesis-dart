@@ -1,14 +1,11 @@
 import 'dart:math';
 import 'package:test/test.dart' as dart_test;
 
-import 'package:better_random/better_random.dart';
 import 'control.dart';
 import 'errors.dart';
-import 'executors.dart' as exec;
 import 'hypothesis_random.dart';
 import 'internal/conjecture/engine.dart';
 import 'reporting.dart';
-import 'search_strategy/misc.dart';
 import 'search_strategy/strategies.dart';
 import 'settings.dart';
 import 'package:meta/meta.dart';

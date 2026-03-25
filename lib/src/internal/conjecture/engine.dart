@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:path/path.dart';
-import '../../dart_utils/platform.dart';
 import 'minimizer.dart';
 
 import '../../dart_utils/bytes.dart';

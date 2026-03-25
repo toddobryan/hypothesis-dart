@@ -1,6 +1,7 @@
 import 'dart:math';
 
-import '../dart_utils/platform.dart';
+import 'package:better_random/better_random.dart';
+
 import '../hypothesis_random.dart';
 import '../internal/conjecture/utils.dart';
 
@@ -142,8 +143,8 @@ class DoubleStrategy extends SearchStrategy<double> {
         } else if (i == 8) {
           randomDouble =
               random.randInt(
-                Platform.current.minInteger,
-                Platform.current.maxInteger,
+                EnvForSafeInt.current.minInteger,
+                EnvForSafeInt.current.maxInteger,
               ) *
               1.0;
         } else {
@@ -151,8 +152,8 @@ class DoubleStrategy extends SearchStrategy<double> {
             mu:
                 1.0 *
                 random.randInt(
-                  Platform.current.minInteger,
-                  Platform.current.maxInteger,
+                  EnvForSafeInt.current.minInteger,
+                  EnvForSafeInt.current.maxInteger,
                 ),
             sigma: 1.0,
           );

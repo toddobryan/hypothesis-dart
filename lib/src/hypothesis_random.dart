@@ -14,6 +14,8 @@ abstract class HypothesisRandom<State> {
 
   double random();
 
+  /// returns an int with size random bits. If size is greater than the
+  /// number of bits supported by the platform, will throw an ArgumentError
   int getRandBits(int size);
 
   int randInt(int lower, int upper);
@@ -49,10 +51,10 @@ class BetterHypRandom extends HypothesisRandom<BetterRandomState> {
       BetterHypRandom._(BetterRandom(seed ?? currentMillis() % 0xFFFF_FFFF));
 
   @override
-  int getRandBits(int size) => rand.getBitsFromBuffer(size);
+  int getRandBits(int size) => rand.nextBits(size);
 
   @override
-  int randInt(int lower, int upper) => rand.nextIntInRange(lower, upper);
+  int randInt(int lower, int upper) => rand.nextIntInBounds(lower, upper);
 
   @override
   double random() => rand.nextDouble();

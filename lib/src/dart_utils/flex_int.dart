@@ -1,7 +1,4 @@
-
-
-
-import 'platform.dart';
+import 'package:better_random/better_random.dart';
 
 abstract class FlexInt implements Comparable<FlexInt> {
   int get bitLength;
@@ -32,7 +29,7 @@ class FInt extends FlexInt {
 
   @override
   FlexInt operator <<(int bits) {
-    if (value.bitLength + bits < Platform.current.maxBitLength) {
+    if (value.bitLength + bits < EnvForSafeInt.current.maxBitLength) {
       return FInt(value << bits);
     } else {
       return promote() << bits;
