@@ -1,5 +1,6 @@
 import 'dart:math';
-import 'dart:typed_data';
+
+import 'package:sized_ints/sized_ints.dart';
 
 import '../../hypothesis_random.dart';
 import '../../dart_utils/bytes.dart';
@@ -111,7 +112,9 @@ int geometric(TestData data, double p) {
     );
   }
 
-  return intFromBytes(data.drawBytes(nBytes, distribution: distribution));
+  int ifb = intFromBytes(data.drawBytes(nBytes, distribution: distribution));
+  print("ifb: ${ifb.toRadixString(16)}");
+  return ifb;
 }
 
 bool boolean(TestData data) {
@@ -121,7 +124,7 @@ bool boolean(TestData data) {
 bool biasedCoin(TestData data, double p) {
   Bytes distribution(HypothesisRandom random, int n) {
     assert(n == 1);
-    return Bytes(Uint8List.fromList([random.random() <= p ? 1 : 0]));
+    return Bytes(List<Uint8>.from([random.random() <= p ? Uint8.one : Uint8.zero]));
   }
   return data.drawBytes(1, distribution: distribution)[0] & 1 == 1;
 }

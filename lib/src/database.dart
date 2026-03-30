@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:sized_ints/sized_ints.dart';
+
 import 'dart_utils/default_map.dart';
 import 'package:path/path.dart' as p;
 
@@ -87,7 +89,7 @@ class DirectoryBasedExampleDatabase extends ExampleDatabase {
   Iterable<Bytes> fetch(Bytes key) sync* {
     Directory kp = _keyPath(key);
     for (File path in kp.listSync().whereType<File>()) {
-      yield Bytes(path.readAsBytesSync());
+      yield Bytes(List<Uint8>.from(path.readAsBytesSync()));
     }
   }
 

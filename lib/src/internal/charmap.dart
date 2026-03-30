@@ -4,7 +4,7 @@ import 'package:collection/collection.dart';
 import '../dart_utils/default_map.dart';
 import 'package:unicode/unicode.dart';
 
-import 'intervalsets.dart';
+import 'interval_sets.dart';
 
 typedef CharMap = Map<UnicodeCategory, List<Interval>>;
 

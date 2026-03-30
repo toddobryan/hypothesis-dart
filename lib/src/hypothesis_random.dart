@@ -1,8 +1,8 @@
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:better_random/better_random.dart';
 import 'package:hypothesis_dart/src/internal/conjecture/engine.dart';
+import 'package:sized_ints/sized_ints.dart';
 
 import 'dart_utils/bytes.dart';
 
@@ -18,6 +18,7 @@ abstract class HypothesisRandom<State> {
   /// number of bits supported by the platform, will throw an ArgumentError
   int getRandBits(int size);
 
+  /// returns a random int from [lower, upper]
   int randInt(int lower, int upper);
 
   double gauss({double mu = 0.0, double sigma = 1.0}) {
@@ -53,12 +54,19 @@ class BetterHypRandom extends HypothesisRandom<BetterRandomState> {
   @override
   int getRandBits(int size) => rand.nextBits(size);
 
+  /// returns a random int from [lower, upper]
   @override
-  int randInt(int lower, int upper) => rand.nextIntInBounds(lower, upper);
+  int randInt(int lower, int upper) {
+    int? newUpper = (upper == EnvForSafeInt.current.maxInteger)
+        ? null
+        : upper + 1;
+    return rand.nextIntInBounds(lower, newUpper);
+  }
 
   @override
   double random() => rand.nextDouble();
 
+  @override
   BetterRandomState get state => rand.state;
 
   void setState(BetterRandomState state) {
@@ -72,7 +80,7 @@ int intFromBytes(Bytes data) {
   int i = 0;
   while (i + 4 <= data.length) {
     result = result << 32;
-    result = result | data.sublist(i, i + 4).unpackInt32();
+    result = result | data.slice(i, i + 4).unpackInt32();
     i += 4;
   }
   while (i < data.length) {
@@ -85,10 +93,10 @@ int intFromBytes(Bytes data) {
 
 Bytes intToBytes(int i, int size) {
   assert(i >= 0, "Given non-negative integer $i");
-  Uint8List result = Uint8List(size);
+  List<Uint8> result = List.filled(size, Uint8.zero);
   int j = size - 1;
   while (i > 0 && j >= 0) {
-    result[j] = i & 255;
+    result[j] = Uint8.fromInt(i & 255);
     i >>= 8;
     j -= 1;
   }

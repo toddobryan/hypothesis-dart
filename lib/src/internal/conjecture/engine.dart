@@ -2,7 +2,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
-import 'package:path/path.dart';
+import 'package:sized_ints/sized_ints.dart';
 import 'minimizer.dart';
 
 import '../../dart_utils/bytes.dart';
@@ -11,7 +11,7 @@ import '../../dart_utils/counter.dart';
 import '../../hypothesis_random.dart';
 import '../../reporting.dart';
 import '../../settings.dart';
-import '../intervalsets.dart';
+import '../interval_sets.dart';
 import 'data.dart';
 
 int currentMillis() => DateTime.timestamp().millisecondsSinceEpoch;
@@ -56,7 +56,7 @@ class TestRunner {
     lastData = TestData(
       settings.bufferSize,
       (TestData data, int n, Distribution distribution) =>
-          distribution(random!, n),
+          distribution(random, n),
     );
     testFunction(lastData!);
     lastData!.freeze();
@@ -129,7 +129,7 @@ class TestRunner {
 
   void debugData(TestData data) {
     debug(
-      "${data.index} bytes ${data.buffer.sublist(0, data.index)} -> ${data.status.name} ${data.output}",
+      "${data.index} bytes ${data.buffer.slice(0, data.index)} -> ${data.status.name} ${data.output}",
     );
   }
 
@@ -140,7 +140,7 @@ class TestRunner {
       throw RunIsComplete();
     }
     examplesConsidered += 1;
-    buffer = buffer.sublist(0, lastData!.index);
+    buffer = buffer.slice(0, lastData!.index);
     if (compareSortKeys(sortKey(buffer), sortKey(lastData!.buffer)) >= 0) {
       return false;
     }
@@ -181,27 +181,27 @@ class TestRunner {
 
   Bytes Function(TestData, int, Distribution) _newMutator() {
     Bytes drawNew(TestData data, int n, Distribution distribution) =>
-        distribution(random!, n);
+        distribution(random, n);
 
     Bytes drawExisting(TestData data, int n, Distribution distribution) =>
-        lastData!.buffer.sublist(data.index, data.index + n);
+        lastData!.buffer.slice(data.index, data.index + n);
 
     Bytes drawSmaller(TestData data, int n, Distribution distribution) {
-      Bytes existing = lastData!.buffer.sublist(data.index, data.index + n);
-      Bytes r = distribution(random!, n);
+      Bytes existing = lastData!.buffer.slice(data.index, data.index + n);
+      Bytes r = distribution(random, n);
       if (r <= existing) {
         return r;
       }
-      return _drawPredecessor(random!, existing);
+      return _drawPredecessor(random, existing);
     }
 
     Bytes drawLarger(TestData data, int n, Distribution distribution) {
-      Bytes existing = lastData!.buffer.sublist(data.index, data.index + n);
-      Bytes r = distribution(random!, n);
+      Bytes existing = lastData!.buffer.slice(data.index, data.index + n);
+      Bytes r = distribution(random, n);
       if (r >= existing) {
         return r;
       }
-      return _drawSuccessor(random!, existing);
+      return _drawSuccessor(random, existing);
     }
 
     Bytes reuseExisting(TestData data, int n, Distribution distribution) {
@@ -210,28 +210,28 @@ class TestRunner {
         choices = lastData!.blockStarts[n] ?? [];
       }
       if (choices.isNotEmpty) {
-        int i = random!.choice(choices);
-        return lastData!.buffer.sublist(i, i + n);
+        int i = random.choice(choices);
+        return lastData!.buffer.slice(i, i + n);
       } else {
-        return distribution(random!, n);
+        return distribution(random, n);
       }
     }
 
     Bytes flipBit(TestData data, int n, Distribution distribution) {
-      Bytes buf = lastData!.buffer.sublist(data.index, data.index + n);
-      int i = random!.randInt(0, n - 1);
-      int k = random!.randInt(0, 7);
-      buf.wrapped[i] = buf.wrapped[i] ^ (1 << k);
+      Bytes buf = lastData!.buffer.slice(data.index, data.index + n);
+      int i = random.randInt(0, n - 1);
+      int k = random.randInt(0, 7);
+      buf.wrapped[i] = buf.wrapped[i] ^ Uint8.fromInt(1 << k);
       return buf;
     }
 
     Bytes drawZero(TestData data, int n, Distribution distribution) {
-      return Bytes(Uint8List(n));
+      return Bytes(List<Uint8>.filled(n, Uint8.zero));
     }
 
     Bytes drawConstant(TestData data, int n, Distribution distribution) {
-      int c = random!.randInt(0, 255);
-      return Bytes(Uint8List.fromList(List.generate(n, (_) => c)));
+      int c = random.randInt(0, 255);
+      return Bytes(List<Uint8>.generate(n, (_) => Uint8.fromInt(c)));
     }
 
     List<Bytes Function(TestData, int, Distribution)> options = [
@@ -248,14 +248,14 @@ class TestRunner {
 
     List<Bytes Function(TestData, int, Distribution)> bits = List.generate(
       4,
-      (_) => random!.choice(options),
+      (_) => random.choice(options),
     );
 
     Bytes drawMutated(TestData data, int n, Distribution distribution) {
       if (data.index + n > lastData!.buffer.length) {
-        return distribution(random!, n);
+        return distribution(random, n);
       }
-      return random!.choice(bits)(data, n, distribution);
+      return random.choice(bits)(data, n, distribution);
     }
 
     return drawMutated;
@@ -289,7 +289,7 @@ class TestRunner {
           // interesting get kept, those that become invalid get
           // dropped, but those that are merely valid gradually go
           // away over time.
-          if (random!.randInt(0, 2) == 0) {
+          if (random.randInt(0, 2) == 0) {
             settings.database!.delete(databaseKey!, existing);
           }
         } else {
@@ -355,8 +355,8 @@ class TestRunner {
         Interval uv = lastData!.intervals[i];
         if (!incorporateNewBuffer(
           lastData!.buffer
-              .sublist(0, uv.start)
-              .followedBy(lastData!.buffer.sublist(uv.end)),
+              .slice(0, uv.start)
+              .followedBy(lastData!.buffer.slice(uv.end)),
         )) {
           i += 1;
         }
@@ -365,26 +365,26 @@ class TestRunner {
       while (i < lastData!.blocks.length) {
         Interval uv = lastData!.blocks[i];
         Bytes buffer = lastData!.buffer;
-        Bytes block = buffer.sublist(uv.start, uv.end);
+        Bytes block = buffer.slice(uv.start, uv.end);
         int n = uv.end - uv.start;
         List<int> as = lastData!.blockStarts[n]!;
-        Iterable<Bytes> buffers = as.map((a) => buffer.sublist(a, a + n));
+        Iterable<Bytes> buffers = as.map((a) => buffer.slice(a, a + n));
         List<Bytes> allBlocks = buffers
             .fold([
-              Bytes(Uint8List.fromList([n])),
+              Bytes(List<Uint8>.from([Uint8.fromInt(n)])),
             ], (Iterable<Bytes> acc, Bytes next) => acc.followedBy([next]))
             .toSet()
             .sorted();
-        List<Bytes> betterBlocks = allBlocks.sublist(
+        List<Bytes> betterBlocks = allBlocks.slice(
           0,
           allBlocks.indexOf(block),
         );
         for (Bytes b in betterBlocks) {
           if (incorporateNewBuffer(
             buffer
-                .sublist(0, uv.start)
+                .slice(0, uv.start)
                 .followedBy(b)
-                .followedBy(buffer.sublist(uv.end)),
+                .followedBy(buffer.slice(uv.end)),
           )) {
             break;
           }
@@ -397,7 +397,7 @@ class TestRunner {
         blockCounter = changed;
         Counter<Bytes> counter = Counter(
           lastData!.blocks.map(
-            (Interval uv) => lastData!.buffer.sublist(uv.start, uv.end),
+            (Interval uv) => lastData!.buffer.slice(uv.start, uv.end),
           ),
         );
         List<Bytes> blocks = counter.entries
@@ -418,12 +418,12 @@ class TestRunner {
       while (i < lastData!.blocks.length) {
         Interval uv = lastData!.blocks[i];
         minimize(
-          lastData!.buffer.sublist(uv.start, uv.end),
+          lastData!.buffer.slice(uv.start, uv.end),
           (Bytes b) => incorporateNewBuffer(
             lastData!.buffer
-                .sublist(0, uv.start)
+                .slice(0, uv.start)
                 .followedBy(b)
-                .followedBy(lastData!.buffer.sublist(uv.end)),
+                .followedBy(lastData!.buffer.slice(uv.end)),
           ),
           random: random,
         );
@@ -434,7 +434,7 @@ class TestRunner {
       List<Bytes>? alternatives;
       while (i < lastData!.intervals.length) {
         alternatives ??= lastData!.intervals
-            .map((Interval uv) => lastData!.buffer.sublist(uv.start, uv.end))
+            .map((Interval uv) => lastData!.buffer.slice(uv.start, uv.end))
             .toSet()
             .sortedBy((Bytes b) => b.length)
             .toList();
@@ -443,12 +443,12 @@ class TestRunner {
           Bytes buf = lastData!.buffer;
           if (a.length < uv.end - uv.start ||
               (a.length == (uv.end - uv.start) &&
-                  a < buf.sublist(uv.start, uv.end))) {
+                  a < buf.slice(uv.start, uv.end))) {
             if (incorporateNewBuffer(
               buf
-                  .sublist(0, uv.start)
+                  .slice(0, uv.start)
                   .followedBy(a)
-                  .followedBy(buf.sublist(uv.end)),
+                  .followedBy(buf.slice(uv.end)),
             )) {
               alternatives = null;
               break;
@@ -462,37 +462,39 @@ class TestRunner {
 }
 
 Bytes _drawPredecessor(HypothesisRandom rnd, Bytes xs) {
-  Uint8List r = Uint8List(0);
+  List<Uint8> r = List<Uint8>.empty(growable: true);
   bool anyStrict = false;
-  for (int x in xs.wrapped) {
+  for (Uint8 x in xs.wrapped) {
     int c;
     if (!anyStrict) {
-      c = rnd.randInt(0, x);
-      if (c < x) {
+      int xInt = x.toSafeInt();
+      c = rnd.randInt(0, xInt);
+      if (c < xInt) {
         anyStrict = true;
       }
     } else {
       c = rnd.randInt(0, 255);
     }
-    r.add(c);
+    r.add(Uint8.fromInt(c));
   }
   return Bytes(r);
 }
 
 Bytes _drawSuccessor(HypothesisRandom rnd, Bytes xs) {
-  Uint8List r = Uint8List(0);
+  List<Uint8> r = [];
   bool anyStrict = false;
-  for (int x in xs.wrapped) {
+  for (Uint8 x in xs.wrapped) {
+    int xInt = x.toSafeInt();
     int c;
     if (!anyStrict) {
-      c = rnd.randInt(x, 255);
-      if (c > x) {
+      c = rnd.randInt(xInt, 255);
+      if (c > xInt) {
         anyStrict = true;
       }
     } else {
       c = rnd.randInt(0, 255);
     }
-    r.add(c);
+    r.add(Uint8.fromInt(c));
   }
   return Bytes(r);
 }
@@ -515,24 +517,24 @@ extension Split on Bytes {
     int i = 0;
     int index = indexOfSublist(sep, i);
     while (index != -1) {
-      parts.add(sublist(i, index));
+      parts.add(slice(i, index));
       i = index + sep.length;
       index = indexOfSublist(sep, i);
     }
     return parts;
   }
 
-  int indexOfSublist(Bytes sublist, int start) {
-    if (sublist.isEmpty) {
+  int indexOfSublist(Bytes slice, int start) {
+    if (slice.isEmpty) {
       return 0;
-    } else if (start + sublist.length > length) {
+    } else if (start + slice.length > length) {
       return -1;
     }
 
-    for (int i = start; i <= length - sublist.length; i++) {
+    for (int i = start; i <= length - slice.length; i++) {
       bool isMatch = true;
-      for (int j = 0; j < sublist.length; j++) {
-        if (this[i + j] != sublist[j]) {
+      for (int j = 0; j < slice.length; j++) {
+        if (this[i + j] != slice[j]) {
           isMatch = false;
           break;
         }
@@ -547,13 +549,13 @@ extension Split on Bytes {
 
 extension Glue on List<Bytes> {
   Bytes glue(Bytes sep) {
-    Iterable<Uint8List> wrappedLists = map((b) => b.wrapped);
+    Iterable<List<Uint8>> wrappedLists = map((b) => b.wrapped);
     BytesBuilder bb = BytesBuilder();
-    bb.add(wrappedLists.first);
-    for (Uint8List wb in wrappedLists) {
-      bb.add(sep.wrapped);
-      bb.add(wb);
+    bb.add(wrappedLists.first.toIntList());
+    for (List<Uint8> wb in wrappedLists) {
+      bb.add(sep.wrapped.toIntList());
+      bb.add(wb.toIntList());
     }
-    return Bytes(bb.toBytes());
+    return Bytes(List<Uint8>.from(bb.toBytes()));
   }
 }

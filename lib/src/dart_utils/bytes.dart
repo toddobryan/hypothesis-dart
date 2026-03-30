@@ -3,54 +3,65 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:sized_ints/sized_ints.dart';
 import 'comparable_operators.dart';
 
 class Bytes with ComparableOperators<Bytes> {
-  Uint8List wrapped;
+  List<Uint8> wrapped;
 
   Bytes(this.wrapped);
 
-  factory Bytes.ofLength(int size) => Bytes(Uint8List(size));
+  factory Bytes.ofLength(int size) => Bytes(List.generate(size, (_) => Uint8.zero));
 
   @override
   int compareTo(Bytes other) {
-    if (wrapped.length == other.wrapped.length) {
-      for (int i = 0; i < wrapped.length; i++) {
-        if (wrapped[i] != other.wrapped[i]) {
-          return wrapped[i] - other.wrapped[i];
-        }
+    for (int i = 0; i < math.min(length, other.length); i++) {
+      if (wrapped[i] < other.wrapped[i]) {
+        return -1;
+      } else if (wrapped[i] > other.wrapped[i]) {
+        return 1;
       }
-      return 0;
+    }
+    if (wrapped.length < other.wrapped.length) {
+      return -1;
+    } else if (wrapped.length > other.wrapped.length) {
+      return 1;
     } else {
-      return wrapped.length - other.wrapped.length;
+      return 0;
     }
   }
 
-  int operator [](int i) => wrapped[i];
+  int operator [](int i) => wrapped[i].toSafeInt();
 
   int get length => wrapped.length;
 
   bool get isEmpty => wrapped.isEmpty;
   bool get isNotEmpty => wrapped.isNotEmpty;
 
-  Bytes sublist(int start, [int? end]) => Bytes(wrapped.sublist(start, end));
+  Bytes slice(final int start, [final int? end]) {
+    int realStart = start < 0 ? length - start : start;
+    int realEnd = end ?? length;
+    realEnd = realEnd < 0 ? length - realEnd : realEnd;
+    realEnd = realEnd > length ? length : realEnd;
+    return Bytes(wrapped.sublist(realStart, realEnd));
+  }
 
-  int get max => wrapped.reduce(math.max);
+  int get max => wrapped.reduce((acc, elt) => acc >= elt ? acc : elt).toSafeInt();
 
   void addAll(Bytes other) {
-    wrapped = Uint8List.fromList([...wrapped, ...other.wrapped]);
+    wrapped = List<Uint8>.from([...wrapped, ...other.wrapped]);
   }
 
-  String get digest => sha1.convert(wrapped).toString();
+  String get digest => sha1.convert(wrapped.toIntList()).toString();
 
   Future<void> writeTo(File f) async {
-    f.writeAsBytes(wrapped, flush: true);
+    f.writeAsBytes(wrapped.toIntList(), flush: true);
   }
 
-  bool any(bool Function(int) test) => wrapped.any(test);
+  bool any(bool Function(int) test) => wrapped.toIntList().any(test);
 
   static Bytes generate(int length, int Function(int) gen) {
-    return Bytes(Uint8List.fromList(List.generate(length, gen)));
+    return Bytes(List<Uint8>.generate(length, (i) => Uint8.fromInt(gen(i))));
   }
 
   @override
@@ -60,7 +71,7 @@ class Bytes with ComparableOperators<Bytes> {
   @override
   int get hashCode => wrapped.hashCode;
 
-  ByteData get _byteData => wrapped.buffer.asByteData();
+  ByteData get _byteData => Uint8List.fromList(wrapped.toIntList()).buffer.asByteData();
 
   double unpackDouble32() => _byteData.getFloat32(0);
   double unpackDouble64() => _byteData.getFloat64(0);
@@ -81,7 +92,10 @@ class Bytes with ComparableOperators<Bytes> {
   static Bytes packUint64(int value) => ByteFormat.uint64.toBytes(value);
 
   Bytes followedBy(Bytes other) =>
-      Bytes(Uint8List.fromList(wrapped.followedBy(other.wrapped).toList()));
+      Bytes(List<Uint8>.from([... wrapped, ...other.wrapped]));
+
+  @override
+  String toString() => wrapped.toString();
 }
 
 class ByteFormat {
@@ -126,6 +140,10 @@ class ByteFormat {
   Bytes toBytes(num value) {
     ByteData bd = ByteData(numBytes);
     f(bd, value);
-    return Bytes(Uint8List.sublistView(bd));
+    return Bytes(List<Uint8>.from(bd.buffer.asUint8List()));
   }
+}
+
+extension ToIntList on List<Uint8> {
+  List<int> toIntList() => map((e) => e.toSafeInt()).toList();
 }

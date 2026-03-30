@@ -3,9 +3,9 @@ import '../../dart_utils/comparable_operators.dart';
 import '../../dart_utils/default_map.dart';
 import '../../errors.dart';
 import '../../hypothesis_random.dart';
-import '../../search_strategy/data.dart';
 import '../../search_strategy/strategies.dart';
-import '../intervalsets.dart';
+import '../../strategies.dart';
+import '../interval_sets.dart';
 
 typedef Distribution = Bytes Function(HypothesisRandom, int);
 typedef ByteDrawer = Bytes Function(TestData, int, Distribution);
@@ -64,7 +64,7 @@ class TestData {
 
   factory TestData.forBuffer(Bytes buffer) => TestData._(
     buffer.length,
-    (TestData d, int n, Distribution _) => buffer.sublist(d.index, d.index + n),
+    (TestData d, int n, Distribution _) => buffer.slice(d.index, d.index + n),
   );
 
   void _assertNotFrozen(String name) {

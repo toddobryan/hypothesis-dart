@@ -27,7 +27,7 @@ String toText(Object textish) {
   if (textish is Function) {
     return textish() as String;
   } else if (textish is Bytes) {
-    return utf8.decode(textish.wrapped, allowMalformed: true);
+    return utf8.decode(textish.wrapped.toIntList(), allowMalformed: true);
   } else {
     return textish.toString();
   }

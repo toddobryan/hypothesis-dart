@@ -37,10 +37,10 @@ packages:
     dependency: transitive
     description:
       name: async
-      sha256: "758e6d74e971c3e5aceb4110bfd6698efc7f501675bcfe0c775459a8140750eb"
+      sha256: e2eb0491ba5ddb6177742d2da23904574082139b07c1e33b8503b9f46f3e1a37
       url: "https://pub.dev"
     source: hosted
-    version: "2.13.0"
+    version: "2.13.1"
   better_random:
     dependency: "direct main"
     description:
@@ -105,7 +105,7 @@ packages:
     source: hosted
     version: "3.0.7"
   fast_immutable_collections:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: fast_immutable_collections
       sha256: "19f70498af299cbce5ff919dbbecd5abfd9d0c28139004f68d3810ce23dedfb3"
@@ -305,7 +305,7 @@ packages:
     source: hosted
     version: "0.1.4"
   sized_ints:
-    dependency: transitive
+    dependency: "direct main"
     description:
       path: "../sized_ints"
       relative: true

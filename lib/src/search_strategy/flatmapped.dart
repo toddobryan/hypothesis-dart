@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import '../internal/conjecture/data.dart';
 import '../settings.dart';
 
@@ -16,7 +14,7 @@ class FlatMapStrategy<From, To> extends SearchStrategy<To> {
     SearchStrategy<From> strategy,
     SearchStrategy<To> Function(From) expand,
   ) {
-    return FlatMapStrategy._(strategy, expand, Settings.defaultValue!);
+    return FlatMapStrategy._(strategy, expand, Settings.defaultValue);
   }
 
   @override

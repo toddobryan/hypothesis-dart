@@ -11,6 +11,8 @@ environment:
 dependencies:
   better_random:
     path: ../better_random
+  sized_ints:
+    path: ../sized_ints
   path: ^1.9.1
   collection: ^1.19.1
   crypto: ^3.0.7
@@ -18,6 +20,7 @@ dependencies:
   unicode: ^1.1.9
   meta: ^1.18.1
   indent: ^2.0.0
+  fast_immutable_collections: ^11.1.0
 
 dev_dependencies:
   lints: ^6.0.0

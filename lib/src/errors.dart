@@ -32,7 +32,12 @@ class Unsatisfiable extends HypothesisException {
 }
 
 class Flaky extends HypothesisException {
-  Flaky(super.message);
+  Flaky._(super.message);
+
+  factory Flaky(String message) {
+    print("Flaky message: $message");
+    return Flaky._(message);
+  }
 }
 
 class Timeout extends Unsatisfiable {

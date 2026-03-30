@@ -15,17 +15,7 @@ class IntegersFromStrategy extends SearchStrategy<int> {
   final int lowerBound;
   final double averageSize;
 
-  IntegersFromStrategy._(this.lowerBound, this.averageSize);
-
-  factory IntegersFromStrategy({
-    int? lowerBound,
-    double? averageSize,
-  }) {
-    return IntegersFromStrategy._(
-      lowerBound ?? -0x8000_0000_0000_0000,
-      averageSize ?? 100_000.0,
-    );
-  }
+  IntegersFromStrategy(this.lowerBound, [this.averageSize = 100_000.0]);
 
   @override
   int doDraw(TestData data) => lowerBound + geometric(data, 1.0 / averageSize);

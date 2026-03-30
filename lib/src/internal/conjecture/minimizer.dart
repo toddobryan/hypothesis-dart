@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
+import 'package:sized_ints/sized_ints.dart';
 
 import '../../dart_utils/bytes.dart';
 import '../../hypothesis_random.dart';
@@ -17,12 +18,16 @@ class Minimizer {
 
   Minimizer._(this.current, this.size, this.condition, this.random, this.seen);
 
-  factory Minimizer(Bytes initial, bool Function(Bytes) condition,
-  {HypothesisRandom? random}) =>
-      Minimizer._(initial, initial.length, condition, random, <Bytes>{});
+  factory Minimizer(
+    Bytes initial,
+    bool Function(Bytes) condition, {
+    HypothesisRandom? random,
+  }) => Minimizer._(initial, initial.length, condition, random, <Bytes>{});
 
   bool incorporate(Bytes buffer) {
     assert(buffer.length == size);
+    print(buffer);
+    print(current);
     assert(buffer <= current);
     considerations += 1;
     if (seen.contains(buffer)) {
@@ -44,37 +49,36 @@ class Minimizer {
       return false;
     }
     if (incorporate(
-        Bytes.generate(current.length, (int j) => j == i ? c : current[j]))) {
+      Bytes([
+        ...current.slice(0, i).wrapped,
+        Uint8.fromInt(c),
+        ...current.slice(i + 1).wrapped,
+      ]),
+    )) {
       return true;
     }
     if (i == size - 1) {
       return false;
     }
     return incorporate(
-        Bytes.generate(current.length, (int j) {
-          if (j == i) {
-            return c;
-          } else if (j == i + 1) {
-            return 255;
-          } else {
-            return current[i];
-          }
-        })
-    ) || incorporate(
-        Bytes.generate(current.length, (int j) {
-          if (j == i) {
-            return c;
-          } else if (j < i) {
-            return current[i];
-          } else {
-            return 255;
-          }
-        })
-    );
+      Bytes([
+        ...current.slice(0, i).wrapped,
+        Uint8.fromInt(c),
+        Uint8.fromInt(255),
+        ...current.slice(i + 2).wrapped,
+      ])
+    ) ||
+        incorporate(
+          Bytes([
+            ...current.slice(0, i).wrapped,
+            Uint8.fromInt(c),
+            ...List<Uint8>.filled(size - i - 1, Uint8.fromInt(255)),
+          ])
+        );
   }
 
   void run() {
-    if (current.isEmpty || !current.any((i) => i != 0)) {
+    if (!current.any((elt) => elt != 0)) {
       return;
     }
     if (incorporate(Bytes.ofLength(size))) {
@@ -82,20 +86,24 @@ class Minimizer {
     }
     for (int c in Iterable.generate(current.max)) {
       if (incorporate(
-          Bytes.generate(current.length, (j) => math.min(current[j], c)))) {
+        Bytes.generate(current.length, (j) => math.min(current[j], c)),
+      )) {
         break;
       }
     }
     int changeCounter = -1;
     while (current.isNotEmpty && changeCounter < changes) {
       changeCounter = changes;
-      for (int i in Iterable.generate(size)) {
+      for (int i = 0; i < size ; i++) {
         int t = current[i];
         if (t > 0) {
+          print(t);
+          print(i);
+          print(current[i]);
           List<int> ss = smallShrinks[current[i]];
           for (int c1 in ss) {
             if (_shrinkIndex(i, c1)) {
-              for (int c2 in Iterable.generate(current[i])) {
+              for (int c2 = 0; c2 < current[i]; c2++) {
                 if (ss.contains(c2)) {
                   continue;
                 }
@@ -116,11 +124,13 @@ List<List<int>> smallShrinks = _createSmallShrinks();
 
 List<List<int>> _createSmallShrinks() {
   List<List<int>> ss = List.generate(
-      10, (b) => Iterable<int>.generate(b).toList());
-  for (int b in Iterable.generate(255 - 10, (i) => i + 10)) {
+    10,
+    (b) => Iterable<int>.generate(b).toList(),
+  );
+  for (int b = 10; b < 256; b++) {
     Set<int> result = <int>{0};
     result.add(b - 1);
-    for (int i in Iterable.generate(8)) {
+    for (int i = 0; i < 8; i++) {
       result.add(b ^ (1 << i));
     }
     result.remove(b);
@@ -130,9 +140,12 @@ List<List<int>> _createSmallShrinks() {
   return ss;
 }
 
-Bytes minimize(Bytes initial, bool Function(Bytes) condition, {HypothesisRandom? random}) {
+Bytes minimize(
+  Bytes initial,
+  bool Function(Bytes) condition, {
+  HypothesisRandom? random,
+}) {
   Minimizer m = Minimizer(initial, condition, random: random);
   m.run();
   return m.current;
 }
-  

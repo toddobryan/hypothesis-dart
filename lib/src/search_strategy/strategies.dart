@@ -11,13 +11,7 @@ import '../internal/conjecture/utils.dart';
 import '../settings.dart';
 
 abstract class SearchStrategy<T> {
-  void validate() {
-    // do nothing
-  }
-
   bool get supportsFind => true;
-
-  T doDraw(TestData data);
 
   T example({HypothesisRandom? random}) {
     NoExamples exc = NoExamples("Could not find any valid examples in 100 tries");
@@ -40,6 +34,17 @@ abstract class SearchStrategy<T> {
   SearchStrategy<T> filter(bool Function(T) condition) =>
       FilteredStrategy(this, condition);
 
+  void validate() {
+    // do nothing
+  }
+
+  T doDraw(TestData data);
+}
+
+extension Or<U, T extends U> on SearchStrategy<T> {
+  SearchStrategy<U> or(SearchStrategy<U> other) {
+    return OneOfStrategy([this, other]);
+  }
 }
 
 class OneOfStrategy<T> extends SearchStrategy<T> {

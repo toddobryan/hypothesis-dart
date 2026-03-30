@@ -4,7 +4,7 @@ import 'package:unicode/unicode.dart';
 
 import '../internal/conjecture/data.dart';
 import '../internal/conjecture/utils.dart';
-import '../internal/intervalsets.dart';
+import '../internal/interval_sets.dart';
 import 'strategies.dart';
 import '../internal/charmap.dart' as charmap;
 

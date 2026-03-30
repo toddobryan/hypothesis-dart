@@ -1,16 +1,5 @@
 import 'package:indent/indent.dart';
 
-import '../core.dart';
-import '../errors.dart';
-import '../internal/conjecture/data.dart';
-import '../internal/conjecture/engine.dart';
-import '../search_strategy/pair.dart';
-import '../settings.dart';
-import 'package:meta/meta.dart';
-import 'package:test/test.dart' as dart_test;
-
-import '../search_strategy/strategies.dart';
-
 String given(int i) {
   List<String> types = listOfTypes(i);
 
