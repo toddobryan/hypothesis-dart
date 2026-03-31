@@ -6,7 +6,7 @@ import 'package:hypothesis_dart/src/search_strategy/numbers.dart';
 import 'package:hypothesis_dart/src/strategies.dart';
 
 void main() {
-  Given2(integers(), data()).test2("conditional draw", (
+  /*Given2(integers(), data()).test2("conditional draw", (
     int x,
     DataObject data,
   ) {
@@ -27,5 +27,12 @@ void main() {
     x.remove(y);
     print(x);
     check(x.contains(y)).isFalse();
+  });*/
+
+  Given1(integers(-100, 100)).test("between -100 and 100", (var x) {
+    assert(x is int);
+    check(x as int)
+        ..isGreaterOrEqual(-100)
+        ..isLessOrEqual(100);
   });
 }

@@ -37,7 +37,7 @@ SearchStrategy<T> oneOf<T>(List<SearchStrategy<T>> strats) {
   }
 }
 
-SearchStrategy<int> integers([int? minValue, int? maxValue]) {
+SearchStrategy<dynamic> integers([int? minValue, int? maxValue]) {
   if (minValue != null && maxValue != null) {
     assert(minValue <= maxValue);
   }
@@ -58,7 +58,7 @@ SearchStrategy<int> integers([int? minValue, int? maxValue]) {
       } else if (maxValue <= 0) {
         return BoundedIntStrategy(-maxValue, -minValue).map((t) => -t);
       } else {
-        return integers(0, maxValue).or(integers(minValue, 0)) as SearchStrategy<int>;
+        return integers(0, maxValue).or(integers(minValue, 0));
       }
     }
   }
